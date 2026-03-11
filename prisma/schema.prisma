@@ -1,0 +1,235 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────
+
+enum UserRole {
+  SYSTEM_ADMIN
+  ORG_ADMIN
+  VIEWER
+}
+
+enum RouterProtocol {
+  ROUTEROS_API
+  SNMP
+  NETFLOW
+  SSH_CLI
+  NETCONF
+}
+
+enum DeviceVendor {
+  MIKROTIK
+  CISCO
+  JUNIPER
+  ARISTA
+  HUAWEI
+  UBIQUITI
+  DELL
+  HPE
+  GENERIC
+}
+
+enum RouterStatus {
+  HEALTHY
+  UNHEALTHY
+  UNREACHABLE
+  PENDING
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum VpnProtocol {
+  WIREGUARD
+  OPENVPN
+  IPSEC
+}
+
+enum VpnStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+// ─── Organizations ──────────────────────────────────────────────────
+
+model Organization {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  contactEmail String   @map("contact_email")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  users      User[]
+  routers    Router[]
+  vpnConfigs VpnConfig[]
+  alerts     AlertRule[]
+
+  @@map("organizations")
+}
+
+// ─── Users ──────────────────────────────────────────────────────────
+
+model User {
+  id             String   @id @default(uuid()) @db.Uuid
+  email          String   @unique
+  passwordHash   String   @map("password_hash")
+  firstName      String   @map("first_name")
+  lastName       String   @map("last_name")
+  role           UserRole @default(VIEWER)
+  organizationId String?  @map("organization_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([organizationId])
+  @@map("users")
+}
+
+// ─── VPN Configurations ─────────────────────────────────────────────
+
+model VpnConfig {
+  id             String      @id @default(uuid()) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
+  protocol       VpnProtocol @default(WIREGUARD)
+  interfaceName  String      @map("interface_name") // e.g. tun0, wg0
+  subnet         String      // e.g. 10.10.0.0/24
+  endpoint       String?     // remote peer endpoint
+  publicKey      String?     @map("public_key")
+  configData     String?     @map("config_data") @db.Text // encrypted config
+  status         VpnStatus   @default(DISCONNECTED)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, interfaceName])
+  @@map("vpn_configs")
+}
+
+// ─── Routers ────────────────────────────────────────────────────────
+
+model Router {
+  id              String         @id @default(uuid()) @db.Uuid
+  organizationId  String         @map("organization_id") @db.Uuid
+  routerName      String         @map("router_name")
+  ipAddress       String         @map("ip_address")
+  protocol        RouterProtocol @default(ROUTEROS_API)
+  vendor          DeviceVendor   @default(GENERIC)
+  osType          String?        @map("os_type") // e.g. IOS-XE, NX-OS, Junos, EOS
+  apiPort         Int            @default(8729) @map("api_port")
+  sshPort         Int            @default(22) @map("ssh_port")
+  netconfPort     Int            @default(830) @map("netconf_port")
+  vpnInterface    String         @map("vpn_interface") // e.g. tun0
+  pollingInterval Int            @default(5) @map("polling_interval") // seconds
+  status          RouterStatus   @default(PENDING)
+  lastPolledAt    DateTime?      @map("last_polled_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  credential   RouterCredential?
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("routers")
+}
+
+// ─── Router Credentials ─────────────────────────────────────────────
+
+model RouterCredential {
+  id                String  @id @default(uuid()) @db.Uuid
+  routerId          String  @unique @map("router_id") @db.Uuid
+  username          String
+  passwordEncrypted String  @map("password_encrypted") @db.Text
+  // SNMP-specific fields
+  snmpVersion       String? @map("snmp_version") // v2c, v3
+  snmpCommunity     String? @map("snmp_community")
+  snmpAuthProtocol  String? @map("snmp_auth_protocol") // MD5, SHA
+  snmpPrivProtocol  String? @map("snmp_priv_protocol") // DES, AES
+  snmpAuthKey       String? @map("snmp_auth_key") @db.Text
+  snmpPrivKey       String? @map("snmp_priv_key") @db.Text
+  // SSH-specific fields
+  sshKeyEncrypted   String? @map("ssh_key_encrypted") @db.Text // PEM private key (encrypted)
+  enablePassword    String? @map("enable_password") @db.Text   // enable/privilege password (encrypted)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  router Router @relation(fields: [routerId], references: [id], onDelete: Cascade)
+
+  @@map("router_credentials")
+}
+
+// ─── Alert Rules ────────────────────────────────────────────────────
+
+model AlertRule {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  name           String
+  metric         String        // e.g. cpu_usage, rx_bps
+  threshold      Float
+  comparison     String        // >, <, >=, <=, ==
+  duration       String        // e.g. "1m", "5m"
+  severity       AlertSeverity @default(WARNING)
+  enabled        Boolean       @default(true)
+  webhookUrl     String?       @map("webhook_url")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  alertInstances AlertInstance[]
+
+  @@index([organizationId])
+  @@map("alert_rules")
+}
+
+// ─── Alert Instances (triggered alerts) ─────────────────────────────
+
+model AlertInstance {
+  id          String      @id @default(uuid()) @db.Uuid
+  alertRuleId String      @map("alert_rule_id") @db.Uuid
+  routerId    String?     @map("router_id") @db.Uuid
+  status      AlertStatus @default(ACTIVE)
+  value       Float       // the value that triggered the alert
+  message     String?
+  triggeredAt DateTime    @default(now()) @map("triggered_at")
+  resolvedAt  DateTime?   @map("resolved_at")
+
+  alertRule AlertRule @relation(fields: [alertRuleId], references: [id], onDelete: Cascade)
+
+  @@index([alertRuleId])
+  @@index([status])
+  @@map("alert_instances")
+}
+
+// ─── Polling Jobs Log ───────────────────────────────────────────────
+
+model PollingLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  routerId    String   @map("router_id") @db.Uuid
+  success     Boolean
+  duration    Int      // ms
+  error       String?  @db.Text
+  polledAt    DateTime @default(now()) @map("polled_at")
+
+  @@index([routerId])
+  @@index([polledAt])
+  @@map("polling_logs")
+}

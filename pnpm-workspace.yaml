@@ -1,0 +1,9 @@
+ignoredBuiltDependencies:
+  - '@nestjs/core'
+  - '@prisma/engines'
+  - '@scarf/scarf'
+  - argon2
+  - esbuild
+  - msgpackr-extract
+  - prisma
+  - unrs-resolver

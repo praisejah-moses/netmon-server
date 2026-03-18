@@ -3,7 +3,7 @@ import { PrismaService } from "../../services/prisma/prisma.service";
 import { CryptoService } from "../../services/crypto/crypto.service";
 import { VpnConfigGeneratorService } from "./vpn-config-generator.service";
 import { CreateVpnConfigDto, UpdateVpnConfigDto } from "./dto/vpn.dto";
-import { VpnStatus } from "@prisma/client";
+import { VpnStatus } from "../../../generated/prisma/client.js";
 
 @Injectable()
 export class VpnService {

@@ -24,8 +24,15 @@ import { WebhookModule } from "./services/webhook/webhook.module";
     ScheduleModule.forRoot(),
     BullModule.forRoot({
       connection: {
-        host: process.env.REDIS_HOST || "localhost",
+        host: process.env.REDIS_HOST || "127.0.0.1",
         port: parseInt(process.env.REDIS_PORT || "6379", 10),
+        password: process.env.REDIS_PASSWORD,
+        retryStrategy: (times) => {
+          const delay = Math.min(times * 50, 2000);
+          return delay;
+        },
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: null,
       },
     }),
     PrismaModule,

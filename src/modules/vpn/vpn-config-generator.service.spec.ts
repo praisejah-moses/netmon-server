@@ -1,5 +1,5 @@
 import { VpnConfigGeneratorService } from "./vpn-config-generator.service";
-import { VpnProtocol } from "@prisma/client";
+import { VpnProtocol } from "../../../generated/prisma/client.js";
 
 describe("VpnConfigGeneratorService", () => {
   let service: VpnConfigGeneratorService;

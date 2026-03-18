@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { VpnProtocol } from "@prisma/client";
+import { VpnProtocol } from "../../../generated/prisma/client.js";
 
 export interface VpnInterfaceConfig {
   interfaceName: string;

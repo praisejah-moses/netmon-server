@@ -4,7 +4,7 @@ import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { PrismaService } from "../../services/prisma/prisma.service";
 import { QUEUE_NAMES, RouterPollJob } from "./constants/queue.constants";
-import { RouterProtocol } from "@prisma/client";
+import { RouterProtocol } from "../../../generated/prisma/client.js";
 
 @Injectable()
 export class PollingSchedulerService {
@@ -20,7 +20,7 @@ export class PollingSchedulerService {
 
   @Cron(CronExpression.EVERY_5_SECONDS)
   async schedulePolling() {
-    const routers = await this.prisma.router.findMany({
+    const routers = (await this.prisma.router.findMany({
       where: { status: { not: "UNREACHABLE" } },
       select: {
         id: true,
@@ -35,8 +35,9 @@ export class PollingSchedulerService {
         vpnInterface: true,
         pollingInterval: true,
         lastPolledAt: true,
-      },
-    });
+        vpnConfig: { select: { interfaceName: true } },
+      } as any,
+    } as any)) as any;
 
     for (const router of routers) {
       // Check if the router is due for polling
@@ -55,7 +56,9 @@ export class PollingSchedulerService {
         apiPort: router.apiPort,
         sshPort: router.sshPort,
         netconfPort: router.netconfPort,
-        vpnInterface: router.vpnInterface,
+        // Resolve VPN interface: prefer linked VpnConfig, fall back to direct override
+        vpnInterface:
+          router.vpnConfig?.interfaceName ?? router.vpnInterface ?? undefined,
       };
 
       const queue = this.resolveQueue(router.protocol);

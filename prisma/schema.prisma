@@ -1,5 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
@@ -118,6 +120,7 @@ model VpnConfig {
   updatedAt      DateTime    @updatedAt @map("updated_at")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  routers      Router[]
 
   @@unique([organizationId, interfaceName])
   @@map("vpn_configs")
@@ -136,7 +139,8 @@ model Router {
   apiPort         Int            @default(8729) @map("api_port")
   sshPort         Int            @default(22) @map("ssh_port")
   netconfPort     Int            @default(830) @map("netconf_port")
-  vpnInterface    String         @map("vpn_interface") // e.g. tun0
+  vpnInterface    String?        @map("vpn_interface") // explicit override; resolved from vpnConfig.interfaceName if linked
+  vpnConfigId     String?        @map("vpn_config_id") @db.Uuid // FK to the VPN tunnel used to reach this device
   pollingInterval Int            @default(5) @map("polling_interval") // seconds
   status          RouterStatus   @default(PENDING)
   lastPolledAt    DateTime?      @map("last_polled_at")
@@ -145,9 +149,11 @@ model Router {
 
   organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   credential   RouterCredential?
+  vpnConfig    VpnConfig?         @relation(fields: [vpnConfigId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([status])
+  @@index([vpnConfigId])
   @@map("routers")
 }
 

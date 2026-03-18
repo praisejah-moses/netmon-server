@@ -6,7 +6,7 @@ import {
   IsIP,
 } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
-import { VpnProtocol } from "@prisma/client";
+import { VpnProtocol } from "../../../../generated/prisma/client.js";
 
 export class CreateVpnConfigDto {
   @ApiProperty({ enum: VpnProtocol, example: VpnProtocol.WIREGUARD })

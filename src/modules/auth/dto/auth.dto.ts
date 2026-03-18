@@ -31,4 +31,13 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   lastName: string;
+
+  @ApiProperty({ example: "Acme Corporation" })
+  @IsString()
+  @IsNotEmpty()
+  organizationName: string;
+
+  @ApiProperty({ example: "contact@acme.com" })
+  @IsEmail()
+  organizationContactEmail: string;
 }

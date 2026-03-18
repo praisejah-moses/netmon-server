@@ -18,7 +18,7 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "../../../generated/prisma/client.js";
 import { AlertsService } from "./alerts.service";
 import { CreateAlertRuleDto, UpdateAlertRuleDto } from "./dto/alert.dto";
 

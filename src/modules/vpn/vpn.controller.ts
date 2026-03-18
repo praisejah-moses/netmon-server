@@ -14,7 +14,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "../../../generated/prisma/client.js";
 import { VpnService } from "./vpn.service";
 import { CreateVpnConfigDto, UpdateVpnConfigDto } from "./dto/vpn.dto";
 import { Response } from "express";

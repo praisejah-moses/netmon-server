@@ -10,7 +10,7 @@ import { PollerRegistryService } from "./pollers/poller-registry.service";
 import { MetricsIngestionService } from "../metrics/metrics-ingestion.service";
 import { RoutersService } from "../routers/routers.service";
 import { PrismaService } from "../../services/prisma/prisma.service";
-import { RouterStatus } from "@prisma/client";
+import { RouterStatus } from "../../../generated/prisma/client.js";
 
 @Processor(QUEUE_NAMES.ROUTER_POLL, { concurrency: 50 })
 export class RouterPollWorker extends WorkerHost {

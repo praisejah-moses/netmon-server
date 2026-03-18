@@ -9,7 +9,7 @@ import {
   IsIn,
 } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
-import { AlertSeverity } from "@prisma/client";
+import { AlertSeverity } from "../../../../generated/prisma/client.js";
 
 export class CreateAlertRuleDto {
   @ApiProperty({ example: "High CPU Alert" })

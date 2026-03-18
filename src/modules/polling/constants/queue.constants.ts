@@ -16,7 +16,8 @@ export interface RouterPollJob {
   apiPort: number;
   sshPort: number;
   netconfPort: number;
-  vpnInterface: string;
+  /** Resolved VPN interface name (from linked VpnConfig or direct override). Undefined for direct-connect devices. */
+  vpnInterface?: string;
 }
 
 export interface MetricProcessingJob {

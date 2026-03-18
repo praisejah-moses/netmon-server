@@ -3,7 +3,7 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { PrismaService } from "../../services/prisma/prisma.service";
 import { WebhookService } from "../../services/webhook/webhook.service";
 import { MetricsQueryService } from "../metrics/metrics-query.service";
-import { AlertStatus } from "@prisma/client";
+import { AlertStatus } from "../../../generated/prisma/client.js";
 
 @Injectable()
 export class AlertEvaluationService {

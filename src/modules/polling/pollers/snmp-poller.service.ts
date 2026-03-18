@@ -20,10 +20,10 @@ export class SnmpPollerService {
   constructor(private routersService: RoutersService) {}
 
   async poll(job: RouterPollJob): Promise<NormalizedMetric[]> {
-    const router = await this.routersService.getRouterWithCredentials(
+    const router = (await this.routersService.getRouterWithCredentials(
       job.routerId,
-    );
-    if (!router.credential) {
+    )) as any;
+    if (!router || !router.credential) {
       throw new Error(`No credentials found for router ${job.routerId}`);
     }
 
